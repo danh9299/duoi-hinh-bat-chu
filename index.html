@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đuổi hình bắt chữ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f3f5f9;
+      color: #202536;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .game {
+      width: min(100%, 760px);
+      background: #fff;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 35px rgba(30, 45, 80, .09);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: clamp(24px, 5vw, 32px);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #72798a;
+      margin: 0 0 24px;
+    }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .counter {
+      font-weight: 700;
+      color: #4b5875;
+    }
+
+    .progress {
+      height: 7px;
+      background: #e9edf5;
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+
+    .progress>div {
+      height: 100%;
+      width: 0;
+      background: #526fe5;
+      transition: width .25s;
+    }
+
+    .picture {
+      min-height: 190px;
+      border: 2px dashed #cbd3e3;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fafbfe;
+      color: #8a92a4;
+      text-align: center;
+      padding: 20px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .picture img {
+      max-width: 100%;
+      max-height: 280px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .answer-label,
+    .letters-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #65708a;
+      margin: 0 0 10px;
+    }
+
+    .answer-slots {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 24px;
+    }
+
+    .slot {
+      width: 39px;
+      height: 46px;
+      border: 1.5px solid #cbd3e3;
+      border-radius: 8px;
+      background: #fff;
+      color: #25304a;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: .15s;
+    }
+
+    .slot.filled {
+      border-color: #8296ed;
+      background: #f0f3ff;
+    }
+
+    .slot:focus-visible,
+    .letter:focus-visible,
+    button:focus-visible {
+      outline: 3px solid #a9b7ff;
+      outline-offset: 2px;
+    }
+
+    .word-gap {
+      width: 12px;
+    }
+
+    .letters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 9px;
+      min-height: 48px;
+      margin-bottom: 22px;
+    }
+
+    .letter {
+      width: 43px;
+      height: 45px;
+      border: 0;
+      border-radius: 9px;
+      background: #edf0f7;
+      color: #27324c;
+      font-size: 19px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .letter:hover:not(:disabled) {
+      background: #dfe5fb;
+      transform: translateY(-2px);
+    }
+
+    .letter:disabled {
+      opacity: .28;
+      cursor: not-allowed;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button.action {
+      border: 0;
+      border-radius: 9px;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      background: #edf0f7;
+      color: #35415e;
+    }
+
+    button.primary {
+      background: #526fe5;
+      color: white;
+    }
+
+    button.action:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .message {
+      min-height: 26px;
+      text-align: center;
+      margin: 16px 0 0;
+      font-weight: 700;
+    }
+
+    .message.good {
+      color: #188653;
+    }
+
+    .message.bad {
+      color: #d04b4b;
+    }
+
+    .footer {
+      text-align: center;
+      color: #9299a8;
+      font-size: 12px;
+      margin-top: 22px;
+    }
+
+    @media (max-width: 480px) {
+      .game {
+        padding: 20px 14px;
+      }
+
+      .slot {
+        width: 31px;
+        height: 40px;
+        font-size: 17px;
+      }
+
+      .letter {
+        width: 39px;
+        height: 42px;
+      }
+
+      .answer-slots {
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="game">
+    <h1>Đuổi hình bắt chữ</h1>
+    <p class="subtitle">Chọn các chữ cái bên dưới để ghép thành đáp án</p>
+
+    <div class="topline">
+      <span class="counter" id="counter">Câu 1 / 5</span>
+      <span class="counter" id="score">Đúng: 0</span>
+    </div>
+    <div class="progress">
+      <div id="progressBar"></div>
+    </div>
+
+    <section class="picture" id="picture" aria-label="Hình ảnh câu đố">
+      <div>
+        <strong>Vị trí hình ảnh câu đố</strong><br />
+      </div>
+    </section>
+
+    <p class="answer-label">ĐÁP ÁN</p>
+    <div class="answer-slots" id="answerSlots"></div>
+
+    <p class="letters-label">CHỌN CHỮ CÁI</p>
+    <div class="letters" id="letters"></div>
+
+    <div class="actions">
+      <button class="action" id="clearBtn" type="button">Xóa tất cả</button>
+      <button class="action primary" id="checkBtn" type="button">Kiểm tra</button>
+      <button class="action" id="nextBtn" type="button" disabled>Câu tiếp theo →</button>
+    </div>
+    <p class="message" id="message" aria-live="polite"></p>
+    <div class="footer">Dễ thế mà thua thì là đồ con gà!</div>
+  </main>
+
+  <script>
+    // Thêm câu hỏi mới hoặc đường dẫn ảnh tại đây.
+    // image: "images/cau-1.jpg" (để trống nếu chưa có ảnh)
+    const questions = [
+      {
+        answer: "MAT NA",
+        letters: "A O M A D U R G T N S E D I R L",
+        image: "https://scontent.fhan5-11.fna.fbcdn.net/v/t1.15752-9/900919502_2333163533919400_656066343066512771_n.png?_nc_cat=109&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=YQjRm1NAyTcQ7kNvwHJWPoe&_nc_oc=AdoWdVejDvwqwtuQLJrzXKhb40t6jJLvdJXPRhdmHJ7zwKQDsWtwHUlBzNyOsd1l3uI&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent.fhan5-11.fna&_nc_ss=7a22e&oh=03_Q7cD6wEjpwDcLg4UijwU5vVxOupKmtE5wnE48-wAwSank045Pw&oe=6B19E0D1"
+      },
+      {
+        answer: "GĂNG TAY XE MÁY",
+        letters: "E G X N G A Y A M N T Y A I R L",
+        image: "https://scontent.fhan5-8.fna.fbcdn.net/v/t1.15752-9/900832283_1657699762746017_4046087683000921950_n.png?_nc_cat=101&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=d7E8G-b_qhAQ7kNvwFEclnT&_nc_oc=AdrXNaSrkzRKyOQbfKlzcZDYYX3ZH4LFvLYPKCqM6ODR6YwXaaDFxvkdE2ZKGO_AQAo&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent.fhan5-8.fna&_nc_ss=7a22e&oh=03_Q7cD6wGyU24NtmBNhf_oWvJqJB-2ayHu4eXp_AIrW_uJHWLquA&oe=6B1A131A"
+      },
+      {
+        answer: "ÁO UNIQLO",
+        letters: "Q O M A L U R I O N S E",
+        image: "https://scontent.fhan5-10.fna.fbcdn.net/v/t1.15752-9/893457016_1447767130666137_9061309864471702252_n.png?_nc_cat=105&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=ncEL-lmWI0cQ7kNvwHMPF2Q&_nc_oc=AdqmAomnV60RMyr6PWHbEeRZCyXciF6mhpbrVwSfItn6FAaVd8TIt9I_5Ts7uK14kNQ&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent.fhan5-10.fna&_nc_ss=7a22e&oh=03_Q7cD6wH7Og61YX_kgbBRmxYiAFqQAEzXnJB5bUyZ39vtFC9N8g&oe=6B1A0D37"
+      },
+      {
+        answer: "TỰ LỰC VĂN ĐOÀN",
+        letters: "N A O T V U C D L A U N M R S E",
+        image: "https://scontent.fhan5-1.fna.fbcdn.net/v/t1.15752-9/847858936_2255797788535714_3064653647242989783_n.png?_nc_cat=107&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=lVNmdC1LbowQ7kNvwGB8JB5&_nc_oc=AdoaEx0TivMBgo9UscGaQ8iFK4sHhfHgXFbSjsZjZfwVLICZRepz1NcatuqyMAxtbq8&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent.fhan5-1.fna&_nc_ss=7a22e&oh=03_Q7cD6wEpGoxZcBjQGpWHSRjF5Lny79ofWXxglrKMVmnwp4j-Ew&oe=6B1A0989"
+      },
+      {
+        answer: "GAME ANDROID",
+        letters: "A O M A D U R G O N S E D I R L",
+        image: "https://scontent.fhan5-6.fna.fbcdn.net/v/t1.15752-9/893457016_1696311795429082_2237333088854054647_n.png?_nc_cat=111&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=9f807c&_nc_ohc=0SXOwQEO2DYQ7kNvwGxbS15&_nc_oc=Adr0bFA47eCEVJPorYmyaPOEgeZ0JowUMfMdX9zRK1th3lA27y3T49N0kBR4QW8Mad0&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=scontent.fhan5-6.fna&_nc_ss=7a22e&oh=03_Q7cD6wG_LLJu2ql-27EfhtFeDbbebMmqxTNZIPxg5R9p6uOnUw&oe=6B19E521"
+      }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    let current = 0;
+    let selected = [];
+    let solved = new Set();
+
+    // Bỏ dấu để so sánh đáp án, nhưng vẫn hiển thị chữ có dấu trong ô.
+    function normalize(value) {
+      return value.normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/Đ/g, "D").replace(/đ/g, "d")
+        .replace(/\s/g, "").toUpperCase();
+    }
+
+    function answerChars(answer) {
+      return [...answer.toUpperCase()].filter(ch => ch !== " ");
+    }
+
+    function render() {
+      const q = questions[current];
+      selected = [];
+      $("counter").textContent = `Câu ${current + 1} / ${questions.length}`;
+      $("score").textContent = `Đúng: ${solved.size}`;
+      $("progressBar").style.width = `${(solved.size / questions.length) * 100}%`;
+      $("message").textContent = "";
+      $("message").className = "message";
+      $("nextBtn").disabled = !solved.has(current);
+      $("nextBtn").textContent = current === questions.length - 1 ? "Chơi lại ↻" : "Câu tiếp theo →";
+
+      if (q.image) {
+        const img = document.createElement("img");
+        img.src = q.image;
+        img.alt = `Hình câu ${current + 1}`;
+        img.onerror = () => { $("picture").textContent = "Không tải được ảnh. Kiểm tra lại đường dẫn ảnh."; };
+        $("picture").replaceChildren(img);
+      } else {
+        $("picture").innerHTML = `<div><strong>Vị trí hình ảnh câu đố</strong><br><small>Có thể thêm ảnh trong dữ liệu câu hỏi ở cuối file</small></div>`;
+      }
+
+      const chars = answerChars(q.answer);
+      $("answerSlots").replaceChildren();
+      chars.forEach((char, index) => {
+        if (char === " ") return;
+        const slot = document.createElement("button");
+        slot.type = "button";
+        slot.className = "slot";
+        slot.setAttribute("aria-label", `Ô chữ ${index + 1}`);
+        slot.addEventListener("click", () => removeAt(index));
+        $("answerSlots").appendChild(slot);
+      });
+
+      $("letters").replaceChildren();
+      q.letters.trim().split(/\s+/).forEach((letter, index) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "letter";
+        btn.textContent = letter;
+        btn.dataset.index = index;
+        btn.addEventListener("click", () => chooseLetter(index, letter));
+        $("letters").appendChild(btn);
+      });
+      updateSlots();
+    }
+
+    function chooseLetter(index, letter) {
+      if (solved.has(current) || selected.some(item => item.index === index)) return;
+      const slots = answerChars(questions[current].answer);
+      if (selected.length >= slots.length) return;
+      selected.push({ index, letter });
+      updateSlots();
+    }
+
+    function removeAt(slotIndex) {
+      if (solved.has(current)) return;
+      selected.splice(slotIndex, 1);
+      updateSlots();
+    }
+
+    function updateSlots() {
+      [...$("answerSlots").children].forEach((slot, index) => {
+        slot.textContent = selected[index]?.letter || "";
+        slot.classList.toggle("filled", Boolean(selected[index]));
+      });
+      [...$("letters").children].forEach(btn => {
+        btn.disabled = selected.some(item => item.index === Number(btn.dataset.index)) || solved.has(current);
+      });
+    }
+
+    function clearAnswer() {
+      if (solved.has(current)) return;
+      selected = [];
+      updateSlots();
+      $("message").textContent = "";
+      $("message").className = "message";
+    }
+
+    function checkAnswer() {
+      if (selected.length !== answerChars(questions[current].answer).length) {
+        $("message").textContent = "Sai rồi gà thế!";
+        $("message").className = "message bad";
+        return;
+      }
+      const typed = selected.map(item => item.letter).join("");
+      const expected = normalize(questions[current].answer);
+      if (normalize(typed) === expected) {
+        solved.add(current);
+        $("message").textContent = "Đúng rồi, cũng ra gì đấy hehe 🎉";
+        $("message").className = "message good";
+        $("score").textContent = `Đúng: ${solved.size}`;
+        $("progressBar").style.width = `${(solved.size / questions.length) * 100}%`;
+        $("nextBtn").disabled = false;
+        updateSlots();
+      } else {
+        $("message").textContent = "Sai rồi gà thế!";
+        $("message").className = "message bad";
+      }
+    }
+
+    function nextQuestion() {
+      if (current === questions.length - 1) {
+        current = 0;
+        solved.clear();
+      } else {
+        current++;
+      }
+      render();
+    }
+
+    $("clearBtn").addEventListener("click", clearAnswer);
+    $("checkBtn").addEventListener("click", checkAnswer);
+    $("nextBtn").addEventListener("click", nextQuestion);
+    render();
+  </script>
+</body>
+
+</html>
